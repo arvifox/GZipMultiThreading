@@ -32,39 +32,27 @@ namespace zipthread
             try
             {
                 // пока есть что сжимать
-                while (!gzipqueue.IsReadDone() || gzipqueue.GetReadIndex() < gzipqueue.GetPartCount())
+                while ((indata = gzipqueue.GetRead(tnumber)) != null)
                 {
-                    indata = null;
-                    // берем порцию и ее номер
-                    indata = gzipqueue.GetRead(tnumber);
-                    if (indata != null)
+                    using (MemoryStream ms = new MemoryStream())
                     {
-                        using (MemoryStream ms = new MemoryStream())
+                        using (GZipStream gz = new GZipStream(ms, CompressionMode.Compress))
                         {
-                            using (GZipStream gz = new GZipStream(ms, CompressionMode.Compress))
-                            {
-                                gz.Write(indata, 0, indata.Length);
-                            }
-                            outdata = ms.ToArray();
+                            gz.Write(indata, 0, indata.Length);
                         }
-                        // в раздел FEXTRA дописываем размер кусков для совместимости
-                        // add 10 bytes of FEXTRA
-                        int totallenght = outdata.Length + 10;
-                        // set FEXTRA flag
-                        outdata[3] = (byte)(4 + outdata[3]);
-                        // write FEXTRA
-                        Array.Resize<byte>(ref outdata, totallenght);
-                        Array.Copy(outdata, 10, outdata, 20, totallenght - 20);
-                        outdata[10] = 8;
-                        outdata[11] = 0;
-                        outdata[12] = 1;
-                        outdata[13] = 1;
-                        outdata[14] = 4;
-                        outdata[15] = 0;
-                        BitConverter.GetBytes(totallenght).CopyTo(outdata, 16);
-                        // отдаем сжатые данные в другую очередь по порядку
-                        gzipqueue.PutWrite(tnumber, outdata);
+                        outdata = ms.ToArray();
                     }
+                    // перед порцией данных запишем 4 байта размер этой порции
+                    int totallenght = outdata.Length + 4;
+                    Array.Resize<byte>(ref outdata, totallenght);
+                    Array.Copy(outdata, 0, outdata, 4, totallenght - 4);
+                    outdata[0] = 0;
+                    outdata[1] = 0;
+                    outdata[2] = 0;
+                    outdata[3] = 0;
+                    BitConverter.GetBytes(totallenght - 4).CopyTo(outdata, 0);
+                    // отдаем сжатые данные в другую очередь по порядку
+                    gzipqueue.PutWrite(tnumber, outdata);
                 }
                 Ok = true;
                 isDone = true;

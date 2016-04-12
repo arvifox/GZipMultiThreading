@@ -5,14 +5,6 @@
     /// </summary>
     public interface IGZipManagerQueue
     {
-        // колво порций
-        int GetPartCount();
-        // текущий индекс прочитанных порций
-        int GetReadIndex();
-        // текущий индекс записанных порций
-        int GetWriteIndex();
-        // завершено ли чтение
-        bool IsReadDone();
         // читающий поток сообщит, что чтение завершено и новых данных больше не будет
         void ReadDone();
         // положить порцию в очередь прочитанных

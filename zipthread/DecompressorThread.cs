@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.IO.Compression;
 using System.Threading;
 
@@ -30,36 +31,29 @@ namespace zipthread
         {
             try
             {
-
-
                 // пока есть что распаковывать
-                while (!gzipqueue.IsReadDone() || gzipqueue.GetReadIndex() < gzipqueue.GetPartCount())
+                while ((indata = gzipqueue.GetRead(tnumber)) != null)
                 {
-                    indata = null;
-                    indata = gzipqueue.GetRead(tnumber);
-                    if (indata != null)
+                    using (GZipStream gz = new GZipStream(new MemoryStream(indata), CompressionMode.Decompress))
                     {
-                        using (GZipStream gz = new GZipStream(new MemoryStream(indata), CompressionMode.Decompress))
+                        int bsize = 4096;
+                        byte[] b = new byte[bsize];
+                        using (MemoryStream ms = new MemoryStream())
                         {
-                            int bsize = 4096;
-                            byte[] b = new byte[bsize];
-                            using (MemoryStream ms = new MemoryStream())
+                            int memc = 0;
+                            do
                             {
-                                int memc = 0;
-                                do
+                                memc = gz.Read(b, 0, bsize);
+                                if (memc > 0)
                                 {
-                                    memc = gz.Read(b, 0, bsize);
-                                    if (memc > 0)
-                                    {
-                                        ms.Write(b, 0, memc);
-                                    }
-                                } while (memc > 0);
-                                outdata = ms.ToArray();
-                            }
+                                    ms.Write(b, 0, memc);
+                                }
+                            } while (memc > 0);
+                            outdata = ms.ToArray();
                         }
-                        // запись порции в очередь готовых
-                        gzipqueue.PutWrite(tnumber, outdata);
                     }
+                    // запись порции в очередь готовых
+                    gzipqueue.PutWrite(tnumber, outdata);
                 }
                 Ok = true;
                 isDone = true;

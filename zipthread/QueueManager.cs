@@ -59,16 +59,6 @@ namespace zipthread
             }
         }
 
-        public bool IsReadDone()
-        {
-            return isReadDone;
-        }
-
-        public void ReadDone()
-        {
-            isReadDone = true;
-        }
-
         // положить порцию в очередь готовых для сжатия/расжатия
         public void PutRead(byte[] _data)
         {
@@ -105,13 +95,16 @@ namespace zipthread
             // сделаем lock, чтобы все потоки не кинулись на одну порцию данных
             lock (queueReadHas)
             {
-                queueReadHas.WaitOne();
-                lock (queueRead)
+                if (!isReadDone || readindex < partCount)
                 {
-                    readindex++;
-                    data = queueRead.Dequeue();
-                    CheckQueueReadEvent();
-                    CheckQueueThreadEvent(_number);
+                    queueReadHas.WaitOne();
+                    lock (queueRead)
+                    {
+                        readindex++;
+                        data = queueRead.Dequeue();
+                        CheckQueueReadEvent();
+                        CheckQueueThreadEvent(_number);
+                    }
                 }
             }
             return data;
@@ -121,14 +114,17 @@ namespace zipthread
         public byte[] GetWrite()
         {
             byte[] data = null;
-            // ждет данные в очереди на запись
-            queueWriteHas.WaitOne();
-            lock (queueWrite)
+            if (!isReadDone || writeindex < partCount)
             {
-                writeindex++;
-                data = queueWrite.Dequeue();
-                CheckQueueWriteEvent();
-                CheckQueueThreadEvent();
+                // ждет данные в очереди на запись
+                queueWriteHas.WaitOne();
+                lock (queueWrite)
+                {
+                    writeindex++;
+                    data = queueWrite.Dequeue();
+                    CheckQueueWriteEvent();
+                    CheckQueueThreadEvent();
+                }
             }
             return data;
         }
@@ -207,20 +203,9 @@ namespace zipthread
             }
         }
 
-        // реализация интерфейсов
-        public int GetPartCount()
+        public void ReadDone()
         {
-            return partCount;
-        }
-
-        public int GetReadIndex()
-        {
-            return readindex;
-        }
-
-        public int GetWriteIndex()
-        {
-            return writeindex;
+            isReadDone = true;
         }
     }
 }

@@ -58,14 +58,9 @@ namespace zipthread
                 using (file_out = new FileStream(OutputFileName, FileMode.Create, FileAccess.Write))
                 {
                     // пока есть данные
-                    while (!gzipwriter.IsReadDone() || gzipwriter.GetWriteIndex() < gzipwriter.GetPartCount())
+                    while ((bytestowrite = gzipwriter.GetWrite()) != null)
                     {
-                        // получает данные из очереди
-                        bytestowrite = gzipwriter.GetWrite();
-                        if (bytestowrite != null)
-                        {
-                            file_out.Write(bytestowrite, 0, bytestowrite.Length);
-                        }
+                        file_out.Write(bytestowrite, 0, bytestowrite.Length);
                     }
                 }
                 resultOK = true;
