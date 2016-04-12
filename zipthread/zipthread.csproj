@@ -50,6 +50,7 @@
     <Compile Include="DecompressorThread.cs" />
     <Compile Include="Factories.cs" />
     <Compile Include="Interfaces.cs" />
+    <Compile Include="QueueManager.cs" />
     <Compile Include="Writer.cs" />
     <Compile Include="Manager.cs" />
     <Compile Include="CompressorReader.cs" />

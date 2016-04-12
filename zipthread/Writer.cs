@@ -11,7 +11,6 @@ namespace zipthread
     {
         private bool resultOK;
         private Thread writerthread;
-        private int partcur = 0;
         private FileStream file_out;
         // интерфейс для доступа к очереди данных
         private IGZipManagerQueue gzipwriter;
@@ -59,14 +58,13 @@ namespace zipthread
                 using (file_out = new FileStream(OutputFileName, FileMode.Create, FileAccess.Write))
                 {
                     // пока есть данные
-                    while (!gzipwriter.IsReadDone() || partcur < gzipwriter.GetPartCount())
+                    while (!gzipwriter.IsReadDone() || gzipwriter.GetWriteIndex() < gzipwriter.GetPartCount())
                     {
                         // получает данные из очереди
                         bytestowrite = gzipwriter.GetWrite();
                         if (bytestowrite != null)
                         {
                             file_out.Write(bytestowrite, 0, bytestowrite.Length);
-                            partcur++;
                         }
                     }
                 }

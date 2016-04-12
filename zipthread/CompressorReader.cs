@@ -49,7 +49,7 @@ namespace zipthread
                         }
                         bytestoread = new byte[dsize];
                         file_in.Read(bytestoread, 0, dsize);
-                        // отдаем попцию в очередь
+                        // отдаем порцию в очередь
                         gzipQueue.PutRead(bytestoread);
                     }
                 }

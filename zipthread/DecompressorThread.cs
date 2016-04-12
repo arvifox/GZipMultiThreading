@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.IO.Compression;
-using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace zipthread
@@ -14,52 +10,65 @@ namespace zipthread
     class DecompressorThread : IGZipThread
     {
         private Thread cthr;
+        private int tnumber;
         private byte[] indata;
         private byte[] outdata;
-        private int position = 0;
         // интерфейс для доступа к очереди порций данных
         private IGZipManagerQueue gzipqueue;
         private bool isDone = false;
+        private bool Ok = false;
 
-        public DecompressorThread(IGZipManagerQueue _queue)
+        public DecompressorThread(IGZipManagerQueue _queue, int _number)
         {
             cthr = new Thread(this.run);
+            tnumber = _number;
             gzipqueue = _queue;
             cthr.Name = "decompressorthread";
         }
 
         void run()
         {
-            // пока есть что распаковывать
-            while (!gzipqueue.IsReadDone() || gzipqueue.GetReadIndex() < gzipqueue.GetPartCount())
+            try
             {
-                indata = null;
-                indata = gzipqueue.GetRead(ref position);
-                if (indata != null)
+
+
+                // пока есть что распаковывать
+                while (!gzipqueue.IsReadDone() || gzipqueue.GetReadIndex() < gzipqueue.GetPartCount())
                 {
-                    using (GZipStream gz = new GZipStream(new MemoryStream(indata), CompressionMode.Decompress))
+                    indata = null;
+                    indata = gzipqueue.GetRead(tnumber);
+                    if (indata != null)
                     {
-                        int bsize = 4096;
-                        byte[] b = new byte[bsize];
-                        using (MemoryStream ms = new MemoryStream())
+                        using (GZipStream gz = new GZipStream(new MemoryStream(indata), CompressionMode.Decompress))
                         {
-                            int memc = 0;
-                            do
+                            int bsize = 4096;
+                            byte[] b = new byte[bsize];
+                            using (MemoryStream ms = new MemoryStream())
                             {
-                                memc = gz.Read(b, 0, bsize);
-                                if (memc > 0)
+                                int memc = 0;
+                                do
                                 {
-                                    ms.Write(b, 0, memc);
-                                }
-                            } while (memc > 0);
-                            outdata = ms.ToArray();
+                                    memc = gz.Read(b, 0, bsize);
+                                    if (memc > 0)
+                                    {
+                                        ms.Write(b, 0, memc);
+                                    }
+                                } while (memc > 0);
+                                outdata = ms.ToArray();
+                            }
                         }
+                        // запись порции в очередь готовых
+                        gzipqueue.PutWrite(tnumber, outdata);
                     }
-                    // запись порции в очередь готовых
-                    gzipqueue.PutWrite(position, outdata);
                 }
+                Ok = true;
+                isDone = true;
             }
-            isDone = true;
+            catch
+            {
+                Ok = false;
+                isDone = true;
+            }
         }
 
         /// <summary>
@@ -83,7 +92,7 @@ namespace zipthread
 
         public bool ResultOK()
         {
-            return true;
+            return Ok;
         }
 
         public bool IsDone()

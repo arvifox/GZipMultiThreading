@@ -1,27 +1,15 @@
 ﻿using System;
 using System.Threading;
 using System.IO;
-using System.Collections.Generic;
 using System.IO.Compression;
 
 namespace zipthread
 {
-    // класс, реализующий многопоточную упаковку и распаковку данных
-    class Manager : IGZipManagerQueue, IGZipThread
+    // класс, выполняющий синхронизацию между потоками чтения, записи и упаковки/распаковки данных
+    class Manager : IGZipThread
     {
         private const string arg_compress = "compress";
         private const string arg_decompress = "decompress";
-
-        // очередь и мьютекс для прочитанных порций данных
-        private Queue<byte[]> queueRead;
-        private Mutex mutexRead;
-
-        // очередь и мьютекс для готовых к записи данных
-        private Queue<byte[]> queueWrite;
-        private Mutex mutexWrite;
-
-        // колво частей которыми читается файл
-        private int partCount = 0;
 
         /// <summary>
         /// работа производится в отдельном потоке
@@ -52,43 +40,11 @@ namespace zipthread
         // поток пишущий в файл
         private IGZipThread writer = null;
 
-        // поток читающий из файла
+        // класс, читающий из файла
         private IGZipReader reader;
 
-        // индексы текущего чтения/записи в очередях
-        private int readindex = 0;
-        private int writeindex = 0;
-
-        // закончено ли чтение исходного файла
-        private bool isReadDone = false;
-
-        /// <summary>
-        /// стартовать работу класса
-        /// </summary>
-        public void StartThread()
-        {
-            thr.Start();
-        }
-
-        public void AbortThread()
-        {
-            thr.Abort();
-        }
-
-        public void JoinThread()
-        {
-            thr.Join();
-        }
-
-        public bool ResultOK()
-        {
-            return resultOk;
-        }
-
-        public bool IsDone()
-        {
-            return isDone;
-        }
+        // объект, управляющий очередями
+        private IGZipManagerQueue QManager;
 
         /// <summary>
         /// конструктор
@@ -99,10 +55,7 @@ namespace zipthread
             thr = new Thread(this.parse);
             threadscount = Environment.ProcessorCount;
             threads = new IGZipThread[threadscount];
-            queueRead = new Queue<byte[]>();
-            mutexRead = new Mutex();
-            queueWrite = new Queue<byte[]>();
-            mutexWrite = new Mutex();
+            QManager = Factories.CreateQueueManager(threadscount);
         }
 
         /// <summary>
@@ -137,18 +90,18 @@ namespace zipthread
             {
                 bool res;
                 // запуск пишущего потока
-                writer = Factories.CreateGZipWriter(args[2], this);
+                writer = Factories.CreateGZipWriter(args[2], QManager);
                 writer.StartThread();
                 for (int i = 0; i < threadscount; i++)
                 {
                     // запуск рабочих потокв
-                    threads[i] = Factories.CreateGZipThread(args[0].Equals(arg_compress), this);
+                    threads[i] = Factories.CreateGZipThread(args[0].Equals(arg_compress), QManager, i);
                     threads[i].StartThread();
                 }
-                // запуск читающего потока
-                reader = Factories.CreateGZipReader(args[0].Equals(arg_compress), this, 1024 * 1024 * 5, args[1]);
+                // запуск чтения
+                reader = Factories.CreateGZipReader(args[0].Equals(arg_compress), QManager, 1024 * 1024 * 5, args[1]);
                 res = reader.DoRead();
-                isReadDone = true;
+                QManager.ReadDone();
                 // ждем пишущий
                 writer.JoinThread();
                 res = writer.ResultOK();
@@ -171,74 +124,31 @@ namespace zipthread
             }
         }
 
-        // реализация интерфейсов
-        public int GetPartCount()
+
+
+        public void StartThread()
         {
-            return partCount;
+            thr.Start();
         }
 
-        // положить порцию в очередь готовых для сжатия/расжатия
-        public void PutRead(byte[] _data)
+        public void AbortThread()
         {
-            mutexRead.WaitOne();
-            queueRead.Enqueue(_data);
-            partCount++;
-            mutexRead.ReleaseMutex();
+            thr.Abort();
         }
 
-        // положить порцию в очередь готовых для записи по порядку
-        public void PutWrite(int _position, byte[] _data)
+        public void JoinThread()
         {
-            while (true)
-            {
-                mutexWrite.WaitOne();
-                if (_position == writeindex)
-                {
-                    queueWrite.Enqueue(_data);
-                    writeindex++;
-                    mutexWrite.ReleaseMutex();
-                    break;
-                }
-                mutexWrite.ReleaseMutex();
-            }
+            thr.Join();
         }
 
-        public int GetReadIndex()
+        public bool ResultOK()
         {
-            return readindex;
+            return resultOk;
         }
 
-        // взять порцию и ее номер из очереди прочитанных
-        public byte[] GetRead(ref int _position)
+        public bool IsDone()
         {
-            byte[] data = null;
-            mutexRead.WaitOne();
-            if (queueRead.Count > 0)
-            {
-                _position = readindex;
-                readindex++;
-                data = queueRead.Dequeue();
-            }
-            mutexRead.ReleaseMutex();
-            return data;
-        }
-
-        // взять порцию из очереди готовых для записи
-        public byte[] GetWrite()
-        {
-            byte[] data = null;
-            mutexWrite.WaitOne();
-            if (queueWrite.Count > 0)
-            {
-                data = queueWrite.Dequeue();
-            }
-            mutexWrite.ReleaseMutex();
-            return data;
-        }
-
-        public bool IsReadDone()
-        {
-            return isReadDone;
+            return isDone;
         }
 
         // простое расжатие в один поток
@@ -271,10 +181,7 @@ namespace zipthread
             }
         }
 
-        /// <summary>
         /// определяет файл упакован этой программой или нет; 
-        /// </summary>
-        /// <returns>true - упакован этой же программой</returns>
         private bool IsMyFileType()
         {
             bool res = false;
