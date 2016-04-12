@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace zipthread
 {
@@ -9,28 +10,35 @@ namespace zipthread
             // use this property or Console.CancelKeyPress event to handle Ctrl+c
             Console.TreatControlCAsInput = true;
 
+            // Stopwatch
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
+
             //GZipStream
-            GZipManager gzip = new GZipManager(args);
+            IGZipThread gzip = Factories.CreateGZipManager(args);
             Console.WriteLine("GZipTest is working...");
-            gzip.StartWork();
+            gzip.StartThread();
 
             // waiting for finish or ctrl+c
             Console.WriteLine("Press Ctrl+c to exit");
             ConsoleKeyInfo cki = new ConsoleKeyInfo();
-            while (!gzip.isDone)
+            while (!gzip.IsDone())
             {
                 if (Console.KeyAvailable)
                 {
                     cki = Console.ReadKey(true);
                     if ((cki.Key == ConsoleKey.C) && (cki.Modifiers & ConsoleModifiers.Control) != 0)
                     {
-                        gzip.StopWork();
+                        gzip.AbortThread();
+                        gzip.JoinThread();
                         break;
                     }
                 }
             }
             Console.WriteLine("GZipTest has done.");
-            if (!gzip.resultOk)
+            sw.Stop();
+            Console.WriteLine("Time elapsed: {0}", sw.Elapsed);
+            if (!gzip.ResultOK())
             {
                 Environment.Exit(1);
             }

@@ -46,9 +46,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GZipManager.cs" />
-    <Compile Include="CompressorManager.cs" />
-    <Compile Include="DecompressorManager.cs" />
+    <Compile Include="CompressorThread.cs" />
+    <Compile Include="DecompressorThread.cs" />
+    <Compile Include="Factories.cs" />
+    <Compile Include="Interfaces.cs" />
+    <Compile Include="Writer.cs" />
+    <Compile Include="Manager.cs" />
+    <Compile Include="CompressorReader.cs" />
+    <Compile Include="DecompressorReader.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
