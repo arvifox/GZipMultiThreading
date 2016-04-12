@@ -1,0 +1,10 @@
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\zipthread\bin\Debug\zipthread.exe.config
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\code\zipthread\obj\Debug\zipthread.csprojResolveAssemblyReference.cache
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\code\zipthread\bin\Debug\GZipTest.exe.config
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\code\zipthread\bin\Debug\GZipTest.exe
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\code\zipthread\bin\Debug\GZipTest.pdb
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\code\zipthread\obj\Debug\GZipTest.exe
+D:\Users\ArvI\Docs\Docs\Disk\arvifoxreps\2016\02 25 c zip thread\code\zipthread\obj\Debug\GZipTest.pdb
+D:\Documents\Documents\Andrey\Doc\Online\arvifoxreps\2016\02 25 c zip thread\code\zipthread\bin\Debug\GZipTest.exe.config
+D:\Documents\Documents\Andrey\Doc\Online\arvifoxreps\2016\02 25 c zip thread\code\zipthread\obj\Debug\GZipTest.exe
+D:\Documents\Documents\Andrey\Doc\Online\arvifoxreps\2016\02 25 c zip thread\code\zipthread\obj\Debug\GZipTest.pdb
