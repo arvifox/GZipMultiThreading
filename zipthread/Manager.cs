@@ -65,7 +65,14 @@ namespace zipthread
             // если 3 параметра командной строки И первый - compress или decompress И второй - существующий файл
             if ((args.Length == 3) && File.Exists(args[1]) && ((args[0].Equals(arg_compress)) || (args[0].Equals(arg_decompress))))
             {
-                resultOk = GZipCompress();
+                if (args[0].Equals(arg_decompress) && !MyType.IsMyFileType(args[1]))
+                {
+                    resultOk = SimpleDecompressor.Decompress(args[1], args[2]);
+                }
+                else
+                {
+                    resultOk = GZipCompress();
+                }
             }
             else
             {

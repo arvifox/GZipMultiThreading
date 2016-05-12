@@ -1,26 +1,24 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace zipthread
 {
-    class DecompressorManager
+    class SimpleDecompressor
     {
-        public static bool Decompress(string filename_in, string filename_out)
+        public static bool Decompress(string sfilein, string sfileout)
         {
+            // простое расжатие в один поток
             try
             {
-                using (FileStream file_in = new FileStream(filename_in, FileMode.Open, FileAccess.Read))
+                /// распаковка в один поток
+                using (FileStream file_in = new FileStream(sfilein, FileMode.Open, FileAccess.Read))
                 {
-                    using (FileStream file_out = new FileStream(filename_out, FileMode.Create, FileAccess.Write))
+                    using (FileStream file_out = new FileStream(sfileout, FileMode.Create, FileAccess.Write))
                     {
                         using (GZipStream gz = new GZipStream(file_in, CompressionMode.Decompress))
                         {
-                            Byte[] buffer = new Byte[file_in.Length];
+                            Byte[] buffer = new Byte[4096];
                             int h;
                             while ((h = gz.Read(buffer, 0, buffer.Length)) > 0)
                             {
@@ -28,16 +26,14 @@ namespace zipthread
                             }
                             gz.Flush();
                         }
-
                     }
-
                 }
+                return true;
             }
-            catch (Exception ex)
+            catch (IOException)
             {
                 return false;
             }
-            return true;
         }
     }
 }
