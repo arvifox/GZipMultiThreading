@@ -65,11 +65,13 @@ namespace zipthread
                 }
                 resultOK = true;
                 isDone = true;
+                gzipwriter.Done(true);
             }
             catch (IOException)
             {
                 resultOK = false;
                 isDone = true;
+                gzipwriter.Done(false);
             }
         }
 

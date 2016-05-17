@@ -42,6 +42,13 @@ namespace zipthread
         // закончено ли чтение исходного файла
         private bool isReadDone = false;
 
+        // все потоки закончили работу или кто-то упал
+        private ManualResetEvent allFinished;
+        // результат работы потоков
+        private bool ThreadsSuccess = false;
+        // кол-во потоков, сообщивших о своем завершении
+        private int ThreadsCountDone = 0;
+
         public QueueManager(int _threadscount)
         {
             ThreadsCount = _threadscount;
@@ -52,10 +59,39 @@ namespace zipthread
             queueReadNeed = new ManualResetEvent(true);
             queueReadHas = new ManualResetEvent(false);
             queueWriteHas = new ManualResetEvent(false);
+            allFinished = new ManualResetEvent(false);
             threadsWrite = new ManualResetEvent[ThreadsCount];
             for (int i = 0; i < ThreadsCount; i++)
             {
                 threadsWrite[i] = new ManualResetEvent(false);
+            }
+        }
+
+        public bool Wait()
+        {
+            allFinished.WaitOne();
+            return ThreadsSuccess;
+        }
+
+        public void Done(bool resultOK)
+        {
+            lock (allFinished)
+            {
+                if (!resultOK)
+                {
+                    ThreadsSuccess = false;
+                    allFinished.Set();
+                }
+                else
+                {
+                    ThreadsCountDone++;
+                    /// +2 - read and write threads
+                    if (ThreadsCountDone == ThreadsCount + 2)
+                    {
+                        ThreadsSuccess = true;
+                        allFinished.Set();
+                    }
+                }
             }
         }
 

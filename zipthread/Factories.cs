@@ -37,7 +37,7 @@
         }
 
         // читающий поток
-        public static IGZipReader CreateGZipReader(bool _compress, IGZipManagerQueue _queue, int _buffersize, string _filename)
+        public static IGZipThread CreateGZipReader(bool _compress, IGZipManagerQueue _queue, int _buffersize, string _filename)
         {
             if (_compress)
             {

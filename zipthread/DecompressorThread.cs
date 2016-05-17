@@ -57,11 +57,13 @@ namespace zipthread
                 }
                 Ok = true;
                 isDone = true;
+                gzipqueue.Done(true);
             }
             catch
             {
                 Ok = false;
                 isDone = true;
+                gzipqueue.Done(false);
             }
         }
 

@@ -40,7 +40,7 @@ namespace zipthread
         private IGZipThread writer = null;
 
         // класс, читающий из файла
-        private IGZipReader reader;
+        private IGZipThread reader;
 
         // объект, управляющий очередями
         private IGZipManagerQueue QManager;
@@ -97,16 +97,20 @@ namespace zipthread
                 }
                 // запуск чтения
                 reader = Factories.CreateGZipReader(args[0].Equals(arg_compress), QManager, 1024 * 1024 * 4, args[1]);
-                res = reader.DoRead();
-                QManager.ReadDone();
-                // ждем пишущий
+                reader.StartThread();
+                // ждем потоки
+                res = QManager.Wait();
+                if (!res)
+                {
+                    throw new Exception();
+                }
                 writer.JoinThread();
-                res = writer.ResultOK();
                 return res;
             }
             catch
             {
                 /// прерывание всех потоков
+                reader.AbortThread();
                 writer.AbortThread();
                 for (int j = 0; j < threadscount; j++)
                 {
@@ -116,12 +120,11 @@ namespace zipthread
                         threads[j].JoinThread();
                     }
                 }
+                reader.JoinThread();
                 writer.JoinThread();
                 return false;
             }
         }
-
-
 
         public void StartThread()
         {

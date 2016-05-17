@@ -1,6 +1,4 @@
-﻿using System;
-using System.IO;
-using System.IO.Compression;
+﻿using System.IO;
 using System.Threading;
 
 namespace zipthread
@@ -8,10 +6,15 @@ namespace zipthread
     /// <summary>
     /// класс, читающий исходный файл порциями и отдающий эти порции в очередь
     /// </summary>
-    class CompressorReader : IGZipReader
+    class CompressorReader : IGZipThread
     {
+        private Thread cthr;
+
         private int buffersize = 0;
         private string filename_in;
+
+        private bool ok = false;
+        private bool done = false;
 
         /// <summary>
         /// интерфейс для работы с очередью
@@ -23,12 +26,38 @@ namespace zipthread
         /// </summary>
         public CompressorReader(int rwbuffersize, string _filename_in, IGZipManagerQueue _gzipQueue)
         {
+            cthr = new Thread(this.DoRead);
             buffersize = rwbuffersize;
             filename_in = _filename_in;
             gzipQueue = _gzipQueue;
         }
 
-        public bool DoRead()
+        public void StartThread()
+        {
+            cthr.Start();
+        }
+
+        public void AbortThread()
+        {
+            cthr.Abort();
+        }
+
+        public void JoinThread()
+        {
+            cthr.Join();
+        }
+
+        public bool ResultOK()
+        {
+            return ok;
+        }
+
+        public bool IsDone()
+        {
+            return done;
+        }
+
+        public void DoRead()
         {
             byte[] bytestoread;
             /// чтение исходного файла кусками; каждый кусок в отдельном потоке сжимается
@@ -53,11 +82,16 @@ namespace zipthread
                         gzipQueue.PutRead(bytestoread);
                     }
                 }
-                return true;
+                done = true;
+                ok = true;
+                gzipQueue.ReadDone();
+                gzipQueue.Done(true);
             }
             catch
             {
-                return false;
+                done = true;
+                ok = false;
+                gzipQueue.Done(false);
             }
         }
     }

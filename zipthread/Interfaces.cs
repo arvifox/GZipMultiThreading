@@ -15,6 +15,10 @@
         byte[] GetRead(int _number);
         // взять порцию обработанных на запись
         byte[] GetWrite();
+        // потоки сообщают менеджеру очередей о своем завершении
+        void Done(bool resultOK);
+        // ждать потоки
+        bool Wait();
     }
 
     // интерфейс для потока
@@ -26,11 +30,4 @@
         bool ResultOK();
         bool IsDone();
     }
-
-    // интерфейс для чтения
-    public interface IGZipReader
-    {
-        bool DoRead();
-    }
-
 }

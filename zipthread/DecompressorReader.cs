@@ -1,27 +1,32 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace zipthread
 {
     /// <summary>
     /// класс, читающий архив порциями
     /// </summary>
-    class DecompressorReader : IGZipReader
+    class DecompressorReader : IGZipThread
     {
+        private Thread cthr;
         private string filename_in;
         // интерфейс для доступа к очереди
         private IGZipManagerQueue gzipQueue;
+        private bool ok = false;
+        private bool done = false;
 
         /// <summary>
         /// конструктор
         /// </summary>
         public DecompressorReader(string _filename_in, IGZipManagerQueue _gzipQueue)
         {
+            cthr = new Thread(this.DoRead);
             filename_in = _filename_in;
             gzipQueue = _gzipQueue;
         }
 
-        public bool DoRead()
+        public void DoRead()
         {
             int xlen = 0;
             byte[] bytestoread;
@@ -54,12 +59,42 @@ namespace zipthread
                         gzipQueue.PutRead(bytestoread);
                     }
                 }
-                return true;
+                done = true;
+                ok = true;
+                gzipQueue.ReadDone();
+                gzipQueue.Done(true);
             }
             catch
             {
-                return false;
+                done = true;
+                ok = false;
+                gzipQueue.Done(false);
             }
+        }
+
+        public void StartThread()
+        {
+            cthr.Start();
+        }
+
+        public void AbortThread()
+        {
+            cthr.Abort();
+        }
+
+        public void JoinThread()
+        {
+            cthr.Join();
+        }
+
+        public bool ResultOK()
+        {
+            return ok;
+        }
+
+        public bool IsDone()
+        {
+            return done;
         }
     }
 }
