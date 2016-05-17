@@ -30,7 +30,7 @@ namespace zipthread
                 }
                 return true;
             }
-            catch (IOException)
+            catch 
             {
                 return false;
             }

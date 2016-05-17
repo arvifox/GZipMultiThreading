@@ -40,6 +40,7 @@ namespace zipthread
             Console.WriteLine("Time elapsed: {0}", sw.Elapsed);
             if (!gzip.ResultOK())
             {
+                Console.WriteLine("Error code = 1");
                 Environment.Exit(1);
             }
         }
