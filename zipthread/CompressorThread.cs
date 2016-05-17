@@ -42,15 +42,21 @@ namespace zipthread
                         }
                         outdata = ms.ToArray();
                     }
-                    // перед порцией данных запишем 4 байта размер этой порции
-                    int totallenght = outdata.Length + 4;
+                    // into FEXTRA write the size of the portions
+                    // 10 bytes
+                    int totallenght = outdata.Length + 10;
+                    // set FEXTRA flag
+                    outdata[3] = (byte)(4 + outdata[3]);
+                    // write FEXTRA
                     Array.Resize<byte>(ref outdata, totallenght);
-                    Array.Copy(outdata, 0, outdata, 4, totallenght - 4);
-                    outdata[0] = 0;
-                    outdata[1] = 0;
-                    outdata[2] = 0;
-                    outdata[3] = 0;
-                    BitConverter.GetBytes(totallenght - 4).CopyTo(outdata, 0);
+                    Array.Copy(outdata, 10, outdata, 20, totallenght - 20);
+                    outdata[10] = 8;
+                    outdata[11] = 0;
+                    outdata[12] = 1;
+                    outdata[13] = 1;
+                    outdata[14] = 4;
+                    outdata[15] = 0;
+                    BitConverter.GetBytes(totallenght).CopyTo(outdata, 16);
                     // отдаем сжатые данные в другую очередь по порядку
                     gzipqueue.PutWrite(tnumber, outdata);
                 }
